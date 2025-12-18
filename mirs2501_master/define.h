@@ -77,3 +77,15 @@ typedef struct {
 
 // Y軸の動作量
 #define STEP_Y_ACT 500
+
+// 状態定義
+typedef enum {
+  MODE_STANDBY = 0,
+  MODE_PATROL,
+  MODE_STOP_WAIT,
+  MODE_BALLOON,
+  MODE_TEST
+} system_mode_t;
+
+// Slaveアドレス
+#define SLAVE_ADDR 8
