@@ -11,9 +11,9 @@
  * 2 (D2) : 左エンコーダ A相
  * 3 (D3) : 右エンコーダ A相
  * 4 (D4) : 左エンコーダ B相
- * 5 (D5) : 超音波センサ Trig (HC-SR04)
+ * 5 (D7) : 右エンコーダ B相
  * 6 (D6) : 超音波センサ Echo (HC-SR04)
- * 7 (D7) : 右エンコーダ B相
+ * 7 (D5) : 超音波センサ Trig (HC-SR04)
  * 8 (D8) : 右モータ DIR (回転方向)
  * 9 (D9) : 右モータ PWM (速度指令)
  * 10 (D10): [未使用] (PWM出力可能)
@@ -57,14 +57,20 @@ void setup() {
   delay(1000);
 
   // --- デバッグモード判定 ---
-  // PCから 't' が送られてきたらテストモードへ
-  Serial.println("Press 't' for Test Mode within 3 sec...");
+  Serial.println("Wait 3sec... Press 't':Test, 'b':Balloon Demo");
   unsigned long start = millis();
   while (millis() - start < 3000) {
     if (Serial.available() > 0) {
-      if (Serial.read() == 't') {
+      char c = Serial.read();
+      
+      if (c == 't') {
         current_mode = MODE_TEST;
         Serial.println("Entered TEST MODE");
+        break;
+      }
+      else if (c == 'b') {
+        current_mode = MODE_DEMO_BALLOON;
+        Serial.println("Entered BALLOON DEMO MODE");
         break;
       }
     }
@@ -90,6 +96,8 @@ void loop() {
       break;
     case MODE_TEST:
       loop_test();
+    case MODE_DEMO_BALLOON:
+      loop_demo_balloon();
       break;
   }
   
@@ -247,5 +255,36 @@ void update_slave_status() {
     slave_btn_a = (status & (1 << 0));
     slave_btn_b = (status & (1 << 1));
     slave_busy  = (status & (1 << 7));
+  }
+}
+
+// --- 風船デモモード (障害物無視・回数制限なし) ---
+void loop_demo_balloon() {
+  vel_ctrl_set(0, 0); // その場で停止
+  vel_ctrl_execute();
+
+  // Slaveが動作中なら終わるのを待つ
+  if (slave_busy) {
+    return;
+  }
+
+  // ボタン判定
+  int target_btn = 0;
+  if (io_get_sw1()) target_btn = 1;
+  else if (io_get_sw2()) target_btn = 2;
+  else if (io_get_sw3()) target_btn = 3;
+
+  // ボタンが押されたら即実行
+  if (target_btn > 0) {
+    Serial.print("Demo Action: Button "); 
+    Serial.println(target_btn);
+
+    // Slaveへコマンド送信
+    Wire.beginTransmission(SLAVE_ADDR);
+    Wire.write(target_btn); 
+    Wire.endTransmission();
+    
+    // 確実にbusyフラグが立つまで一瞬待つ & 連打防止
+    delay(500); 
   }
 }

@@ -84,7 +84,8 @@ typedef enum {
   MODE_PATROL,
   MODE_STOP_WAIT,
   MODE_BALLOON,
-  MODE_TEST
+  MODE_TEST,
+  MODE_DEMO_BALLOON
 } system_mode_t;
 
 // Slaveアドレス
