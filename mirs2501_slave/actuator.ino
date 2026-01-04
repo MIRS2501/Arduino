@@ -2,7 +2,7 @@
 
 // --- ピン定義 (空いているピンを使用) ---
 // モーター駆動用
-#define ACT_PIN_PWM  7   // PWMピン (enable)
+#define ACT_PIN_PWM  5   // PWMピン (enable)
 #define ACT_PIN_DIR  8   // 回転方向
 
 // エンコーダ用 (アナログピンをデジタル入力として使用)

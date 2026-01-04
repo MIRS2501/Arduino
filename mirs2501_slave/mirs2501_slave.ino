@@ -40,7 +40,7 @@
 #define PIN_SERVO_3  13
 // ステッピング (以前と同じ)
 #define X_STEP_PIN 2
-#define X_DIR_PIN  5
+#define X_DIR_PIN  7
 #define Y_STEP_PIN 3
 #define Y_DIR_PIN  6
 #define X_LIMIT_PIN 9 
