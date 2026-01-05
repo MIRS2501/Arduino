@@ -2,8 +2,8 @@
  * ======================================================================================
  * プロジェクト名 : MIRS2501 BABLOON
  * ファイル名     : mirs2501_master.ino
- * バージョン     : Ver 1.00
- * 最終更新日     : 2025/12/18
+ * バージョン     : Ver 1.02
+ * 最終更新日     : 2025/1/4
  * --------------------------------------------------------------------------------------
  * [ ピン配置 (Pin Assignment) - Arduino Uno ]
  * 0 (D0) : Serial RX (PC/RasPi通信)
@@ -67,10 +67,13 @@ void setup() {
         current_mode = MODE_TEST;
         Serial.println("Entered TEST MODE");
         break;
-      }
-      else if (c == 'b') {
+      } else if (c == 'b') {
         current_mode = MODE_DEMO_BALLOON;
         Serial.println("Entered BALLOON DEMO MODE");
+        break;
+      } else if (c == 's') { // <--- 追加
+        current_mode = MODE_TEST_SERVO;
+        Serial.println("Entered SERVO CHECK MODE");
         break;
       }
     }
@@ -98,6 +101,8 @@ void loop() {
       loop_test();
     case MODE_DEMO_BALLOON:
       loop_demo_balloon();
+    case MODE_TEST_SERVO:
+      loop_test_servo();
       break;
   }
   
@@ -286,5 +291,27 @@ void loop_demo_balloon() {
     
     // 確実にbusyフラグが立つまで一瞬待つ & 連打防止
     delay(500); 
+  }
+}
+
+// --- サーボ単体テストモード ---
+void loop_test_servo() {
+  vel_ctrl_set(0, 0); // 停止
+  
+  if (slave_busy) return; // Slaveが動作中なら待つ
+
+  int target_btn = 0;
+  if (io_get_sw1()) target_btn = 1;
+  if (io_get_sw2()) target_btn = 2;
+  if (io_get_sw3()) target_btn = 3;
+
+  if (target_btn > 0) {
+    Serial.print("Servo Test: Button "); 
+    Serial.println(target_btn);
+    
+    // コマンド送信 (11, 12, 13 を送ることで区別する)
+    send_slave_command(10 + target_btn); 
+    
+    delay(500); // チャタリング防止
   }
 }
