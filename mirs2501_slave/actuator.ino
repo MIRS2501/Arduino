@@ -1,18 +1,5 @@
 #include "AngleController.h"
-
-// --- ピン定義 (空いているピンを使用) ---
-// モーター駆動用
-#define ACT_PIN_PWM  5   // PWMピン (enable)
-#define ACT_PIN_DIR  8   // 回転方向
-
-// エンコーダ用 (アナログピンをデジタル入力として使用)
-#define ACT_PIN_ENC_A A0 // PCINT8
-#define ACT_PIN_ENC_B A1 // PCINT9
-
-// --- パラメータ設定 (使用するモータに合わせて変更してください) ---
-#define ACT_PPR        12.0   // エンコーダのパルス数(1回転あたり)
-#define ACT_GEAR_RATIO 50.0   // ギア比 (例: 50:1 なら 50.0)
-#define ACT_ENC_MAG    4.0    // エンコーダ逓倍 (通常4逓倍)
+#include "define.h"
 
 // --- グローバル変数 ---
 // クラスのインスタンス生成 (ループ周期 5ms)
@@ -44,15 +31,15 @@ void act_reset_encoder() {
 // 3. モーター出力 (-255 ～ 255)
 void act_set_motor(int pwm) {
   if (pwm > 0) {
-    digitalWrite(ACT_PIN_DIR, HIGH); // 正転
-    analogWrite(ACT_PIN_PWM, pwm);
+    digitalWrite(PIN_ACT_DIR, HIGH); // 正転
+    analogWrite(PIN_ACT_PWM, pwm);
   } else if (pwm < 0) {
-    digitalWrite(ACT_PIN_DIR, LOW);  // 逆転
-    analogWrite(ACT_PIN_PWM, -pwm);  // 絶対値を出力
+    digitalWrite(PIN_ACT_DIR, LOW);  // 逆転
+    analogWrite(PIN_ACT_PWM, -pwm);  // 絶対値を出力
   } else {
     // 停止 (ブレーキ)
-    digitalWrite(ACT_PIN_DIR, LOW);
-    analogWrite(ACT_PIN_PWM, 0);
+    digitalWrite(PIN_ACT_DIR, LOW);
+    analogWrite(PIN_ACT_PWM, 0);
   }
 }
 
@@ -95,16 +82,16 @@ ISR(PCINT1_vect) {
 // セットアップ (setup()内で呼ぶ)
 void actuator_open() {
   // ピン設定
-  pinMode(ACT_PIN_PWM, OUTPUT);
-  pinMode(ACT_PIN_DIR, OUTPUT);
-  pinMode(ACT_PIN_ENC_A, INPUT_PULLUP);
-  pinMode(ACT_PIN_ENC_B, INPUT_PULLUP);
+  pinMode(PIN_ACT_PWM, OUTPUT);
+  pinMode(PIN_ACT_DIR, OUTPUT);
+  pinMode(PIN_ACT_ENC_A, INPUT_PULLUP);
+  pinMode(PIN_ACT_ENC_B, INPUT_PULLUP);
 
   // ハードウェア関数をクラスに登録
   actuator.attachHardware(act_set_motor, act_read_encoder, act_reset_encoder);
   
   // PIDゲイン設定 (必要に応じて調整)
-  // actuator.setGains(10.0, 0.1, 0.0);
+  actuator.setGains(100.0, 5.0, 0.0);
 
   // --- ピン変化割り込み(PCINT)の設定 (A0, A1ピン用) ---
   noInterrupts();
@@ -112,6 +99,8 @@ void actuator_open() {
   PCMSK1 |= (1 << PCINT8);   // A0ピン (PCINT8) を対象にする
   PCMSK1 |= (1 << PCINT9);   // A1ピン (PCINT9) を対象にする
   interrupts();
+
+  act_reset_encoder();
 }
 
 // 指定角度まで動かす関数 [単位: rad]

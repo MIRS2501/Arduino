@@ -2,8 +2,8 @@
  * ======================================================================================
  * プロジェクト名 : MIRS2501 BABLOON
  * ファイル名     : mirs2501_master.ino
- * バージョン     : Ver 1.02
- * 最終更新日     : 2025/1/4
+ * バージョン     : Ver 1.05
+ * 最終更新日     : 2025/1/5
  * --------------------------------------------------------------------------------------
  * [ ピン配置 (Pin Assignment) - Arduino Uno ]
  * 0 (D0) : Serial RX (PC/RasPi通信)
@@ -45,39 +45,48 @@ bool slave_btn_b = false;
 bool slave_busy  = false;
 
 void setup() {
-  // 各モジュール初期化
   io_open();
   encoder_open();
   motor_open();
   raspi_open();
   master_i2c_open();
-  sonar_open();
-  
-  // アクチュエータ等の初期化コマンド送信（念のため）
-  delay(1000);
+  sonar_open(); 
 
-  // --- デバッグモード判定 ---
-  Serial.println("Wait 3sec... Press 't':Test, 'b':Balloon Demo");
+  // ==========================================
+  // デモモード起動 (発表会用)
+  // ==========================================
+  
+  // 入力待ちをスキップして、強制的にデモモードを設定
+  current_mode = MODE_TEST_SERVO;
+  
+  Serial.println("AUTO START: BALLOON DEMO MODE");
+
+  /*
+  Serial.println("Wait 3sec... Press 't':Test, 'b':Demo");
+  play_voice("START"); 
+
   unsigned long start = millis();
   while (millis() - start < 3000) {
     if (Serial.available() > 0) {
       char c = Serial.read();
-      
       if (c == 't') {
         current_mode = MODE_TEST;
         Serial.println("Entered TEST MODE");
         break;
       } else if (c == 'b') {
         current_mode = MODE_DEMO_BALLOON;
-        Serial.println("Entered BALLOON DEMO MODE");
+        Serial.println("Entered BALLOON DEMO");
+        play_voice("BALLOON");
         break;
-      } else if (c == 's') { // <--- 追加
+      } else if (c == 's') {
         current_mode = MODE_TEST_SERVO;
         Serial.println("Entered SERVO CHECK MODE");
+        play_voice("TEST");
         break;
       }
     }
   }
+  */
 }
 
 void loop() {

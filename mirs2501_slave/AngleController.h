@@ -24,7 +24,7 @@ private:
     void (*reset_encoder_count)(); // エンコーダリセット関数へのポインタ
 
     // 定数
-    const double STOP_THRESHOLD = 3.141592653589793 / 180.0; // 停止判定閾値（約1度）
+    const double STOP_THRESHOLD = 3.14159 / 180.0; // 停止判定閾値（約1度）
 
 public:
     // コンストラクタ
@@ -62,13 +62,19 @@ public:
         // 関数が登録されていない場合は何もしない（安全対策）
         if (set_motor_pwm == nullptr || get_encoder_count == nullptr || reset_encoder_count == nullptr) return;
 
-        reset_encoder_count();
         delay(10); 
 
         error_integral = 0.0;
         error_before = 0.0;
 
+        unsigned long start_time = millis();
+
         while (true) {
+            if (millis() - start_time > 2000) {
+                 set_motor_pwm(0);
+                 break;
+            }
+          
             // エンコーダ読み取り & 角度計算
             long current_count = get_encoder_count();
             double current_angle = current_count * angle_per_pulse;
