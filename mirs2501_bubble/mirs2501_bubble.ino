@@ -34,13 +34,13 @@ void loop() {
   if (digitalRead(PIN_SWITCH) == LOW) {
     
     // 1. 回転方向を決める (HIGHまたはLOW)
-    digitalWrite(PIN_DIR, HIGH); 
+    digitalWrite(PIN_DIR, LOW); 
 
     // 2. モーターを回す (PWM 100)
-    analogWrite(PIN_PWM, 100);
+    analogWrite(PIN_PWM, 200);
 
     // 3. 3秒待つ
-    delay(3000);
+    delay(5000);
 
     // 4. 停止する
     analogWrite(PIN_PWM, 0);

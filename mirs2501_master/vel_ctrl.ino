@@ -14,13 +14,13 @@ static long count = 1;
 
 void vel_ctrl_execute() {
   // --- 左モータ用ゲイン ---
-  const double Kp_l = 1.2345;
-  const double Ki_l = 0.0567;
+  const double Kp_l = 1.7318;
+  const double Ki_l = 0.1043;
   const double Kd_l = 0.0;     // 通常は0
 
   // --- 右モータ用ゲイン ---
-  const double Kp_r = 1.4567;
-  const double Ki_r = 0.0678;  
+  const double Kp_r = 1.7244;
+  const double Ki_r = 0.1039;  
   const double Kd_r = 0.0;     
   /* ========================================================= */
 
