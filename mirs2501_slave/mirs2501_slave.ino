@@ -36,8 +36,8 @@
 
 // --- オブジェクト ---
 Servo s1, s2, s3;
-AccelStepper stepperX(AccelStepper::DRIVER, X_STEP_PIN, X_DIR_PIN);
-AccelStepper stepperY(AccelStepper::DRIVER, Y_STEP_PIN, Y_DIR_PIN);
+AccelStepper stepperX(AccelStepper::DRIVER, PIN_STEP_X, PIN_DIR_X);
+AccelStepper stepperY(AccelStepper::DRIVER, PIN_STEP_Y, PIN_DIR_Y);
 
 // --- 定数 ---
 const long POS_X[] = {0, 1000, 2000, 3000}; // 初期, A, B, C
@@ -54,6 +54,10 @@ void setup() {
   pinMode(PIN_SOLENOID, OUTPUT);
   pinMode(PIN_BTN_A, INPUT_PULLUP);
   pinMode(PIN_BTN_B, INPUT_PULLUP);
+
+  // リミットスイッチの設定 (プルアップ)
+  pinMode(PIN_LIMIT_X, INPUT_PULLUP);
+  pinMode(PIN_LIMIT_Y, INPUT_PULLUP);
 
   // モータ類初期化
   s1.attach(PIN_SERVO_1); s1.write(0);
