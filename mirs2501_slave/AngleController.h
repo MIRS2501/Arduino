@@ -3,6 +3,135 @@
 
 #include <Arduino.h>
 
+class AngleController {
+private:
+    double angle_per_pulse;
+    double kp, ki, kd;
+    int delay_ms;
+    
+    // 追加: 制御パラメータ
+    int min_pwm;           // モーターが回り始める最小PWM (不感帯補償)
+    double integral_limit; // 積分項の上限 (暴走防止)
+
+    double error_integral;
+    double error_before;
+
+    // 関数ポインタ
+    void (*set_motor_pwm)(int);
+    long (*get_encoder_count)();
+    void (*reset_encoder_count)();
+
+    const double STOP_THRESHOLD = 0.15; // 停止判定誤差 [rad] (約3度)
+
+public:
+    AngleController(double ppr, double gear_ratio, double enc_mag, int loop_delay_ms = 10) 
+        : delay_ms(loop_delay_ms), error_integral(0.0), error_before(0.0),
+          set_motor_pwm(nullptr), get_encoder_count(nullptr), reset_encoder_count(nullptr) {
+        
+        angle_per_pulse = 2.0 * 3.1415926535 / (ppr * enc_mag * gear_ratio);
+        
+        // デフォルト値
+        kp = 100.0; ki = 0.0; kd = 0.0;
+        min_pwm = 0;
+        integral_limit = 1000.0;
+    }
+
+    void attachHardware(void (*motor_func)(int), long (*encoder_read_func)(), void (*encoder_reset_func)()) {
+        set_motor_pwm = motor_func;
+        get_encoder_count = encoder_read_func;
+        reset_encoder_count = encoder_reset_func;
+    }
+
+    // パラメータ設定用関数 (min_pwm と i_limit を追加)
+    void setParams(double p, double i, double d, int minimum_pwm, double i_limit) {
+        kp = p;
+        ki = i;
+        kd = d;
+        min_pwm = minimum_pwm;
+        integral_limit = i_limit;
+    }
+
+    // 移動関数 (大幅改変)
+    void moveToAngle(double target_angle) {
+        if (!set_motor_pwm || !get_encoder_count) return;
+
+        error_integral = 0.0;
+        error_before = 0.0;
+        
+        unsigned long start_time = millis();
+        unsigned long stable_start_time = 0; // 安定し始めた時刻
+        bool is_stable = false;
+
+        // タイムアウト設定 (5秒)
+        const unsigned long TIMEOUT_MS = 5000;
+
+        while (true) {
+            // 1. タイムアウト処理
+            if (millis() - start_time > TIMEOUT_MS) {
+                set_motor_pwm(0);
+                Serial.println(">> PID Timeout!");
+                break;
+            }
+
+            // 2. 現在値取得
+            double current_angle = get_encoder_count() * angle_per_pulse;
+            double error = target_angle - current_angle;
+
+            // 3. 安定判定ロジック (目標付近に 200ms 留まったら完了)
+            if (abs(error) < STOP_THRESHOLD) {
+                if (!is_stable) {
+                    is_stable = true;
+                    stable_start_time = millis();
+                } else if (millis() - stable_start_time > 200) {
+                    set_motor_pwm(0); // 完全停止
+                    break; // ループを抜ける
+                }
+            } else {
+                is_stable = false;
+            }
+
+            // 4. PID計算
+            error_integral += error;
+            
+            // 【重要】積分の暴走ガード (Windup Guard)
+            if (error_integral > integral_limit) error_integral = integral_limit;
+            if (error_integral < -integral_limit) error_integral = -integral_limit;
+
+            double p_term = kp * error;
+            double i_term = ki * error_integral;
+            double d_term = kd * (error - error_before);
+            
+            double output = p_term + i_term + d_term;
+
+            // 5. モーター出力決定
+            int pwm = (int)output;
+
+            // 【重要】不感帯補償 (Min PWM)
+            // 計算上のPWMが小さくても、min_pwm以下なら底上げして回す
+            if (pwm > 0) {
+                if (pwm < min_pwm) pwm = min_pwm;
+                if (pwm > 255) pwm = 255;
+            } else if (pwm < 0) {
+                if (pwm > -min_pwm) pwm = -min_pwm;
+                if (pwm < -255) pwm = -255;
+            }
+
+            // 安定判定に入っている間は、ブレーキをかけるために出力を弱める、または0にする工夫も可能
+            // ここではシンプルに出力する
+            set_motor_pwm(pwm);
+
+            error_before = error;
+            delay(delay_ms);
+        }
+    }
+};
+
+#endif
+/*#ifndef ANGLE_CONTROLLER_H
+#define ANGLE_CONTROLLER_H
+
+#include <Arduino.h>
+
 // ==========================================
 // 角度位置制御クラス (Arduino UNO版)
 // ==========================================
@@ -58,7 +187,8 @@ public:
     }
 
     // 指定角度まで移動して停止（ブロッキング動作）
-    void moveToAngle(double target_angle) {
+    pur
+    /*void moveToAngle(double target_angle) {
         // 関数が登録されていない場合は何もしない（安全対策）
         if (set_motor_pwm == nullptr || get_encoder_count == nullptr || reset_encoder_count == nullptr) return;
 
@@ -112,4 +242,4 @@ public:
     }
 };
 
-#endif
+#endif*/
